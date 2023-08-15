@@ -27,7 +27,7 @@ Different Escape Arguments can be deliminated by a "/"
 ```python
 esc.print("Hello World!", "red/underline", end="")
 ```
-### <div id="kwargs"></div>Keyword Args
+#### <div id="kwargs"></div>Keyword Args
 | Keyword     | Description |
 | ----------- | ----------- |
 | bg   | sets background color, either color code (int) or R,G,B (tuple) |
