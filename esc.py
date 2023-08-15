@@ -1,6 +1,7 @@
 import sys
+import os
+from collections import namedtuple
 from typing import Callable
-
 
 
 # https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
@@ -10,6 +11,7 @@ ESCMAP = {
     "dim" : "\x1b[2m",
     "blink" : "\033[5m",
     "italic" : "\033[3m",
+    "i" : "\033[3m",
     "underline" : "\x1b[4m",
     "u" : "\x1b[4m",
     "reverse" : "\x1b[7m",
@@ -81,7 +83,8 @@ class esc:
     bold = "\x1b[1m"    
     dim = "\x1b[2m"    
     blink = "\033[5m"
-    italic = "\033[3m"     
+    italic = "\033[3m"
+    i = "\033[3m"        
     underline = "\x1b[4m"    
     u = "\x1b[4m"      
     reverse = "\x1b[7m"    
@@ -148,7 +151,38 @@ class esc:
     restorescreen = "\x1b[?47l"
     
     @staticmethod
-    def set(*esc_args):
+    def set(*esc_args, **kwargs):
+
+        if "fg" in kwargs:
+            fg = kwargs["fg"]
+            del kwargs["fg"]
+            if isinstance(fg, int):
+                if fg > 255:
+                    raise ValueError('"fg" argument as int must be within range of 0-255')
+                esc.fg_code(fg)
+            elif isinstance(fg, (tuple,list)) and len(fg) == 3:
+                esc.fg_rgb(r=fg[0],g=fg[1],b=fg[2])
+            elif isinstance(fg, (tuple,list)) and len(fg) < 3:
+                raise ValueError('"fg" argument as list/tuple must have 3 elements, corresponding to R,G,B.')
+            else:
+                raise TypeError('"fg" argument must be either type int or type tuple/list')
+        
+        if "bg" in kwargs:
+            bg = kwargs["bg"]
+            del kwargs["bg"]
+            if isinstance(bg, int):
+                esc.bg_code(bg)
+            elif isinstance(bg, (tuple,list)) and len(bg) == 3:
+                esc.bg_rgb(r=bg[0],g=bg[1],b=bg[2])
+            elif isinstance(bg, (tuple,list)) and len(bg) < 3:
+                raise ValueError('"bg" argument as list/tuple must have 3 elements, corresponding to R,G,B.')
+            else:
+                raise TypeError('"bg" argument must be either type int or type tuple/list')
+
+        if "default" in kwargs:
+            esc.set(kwargs["default"])
+            del kwargs["default"]
+
         for esc_arg in esc_args:
             esc_arg = esc_arg.replace(",","/")
             for e in esc_arg.split("/"):
@@ -157,49 +191,66 @@ class esc:
                     print(ESCMAP[e],end="")
 
     @staticmethod
-    def print(string:str,*esc_args,**kwargs):        
-        def passme():
-            pass
+    def print(string:str,*esc_args,**kwargs):       
+        try: 
+            def passme():
+                pass
 
-        esc.set(*esc_args)
-    
-        if "precall" in kwargs:
-            precall = kwargs["precall"]
-            del kwargs["precall"]
-        else:
-            precall = passme
-
-        if "postcall" in kwargs:
-            postcall = kwargs["postcall"]
-            del kwargs["postcall"]
-        else:
-            postcall = passme
-
-        prefix=""
-        if "prefix" in kwargs:
-            prefix=kwargs["prefix"]
-            del kwargs["prefix"]
-
-        precall()
-        print(prefix, end="")
-        print(string, **kwargs)
-        postcall()
-        esc.clear()
+            esc.set(*esc_args, **kwargs)
         
-    @staticmethod
-    def printf(*args) -> None:
-        for arg in args:
-            if (isinstance(arg,tuple) or isinstance(arg, list)):
-                string = arg[0]
-                if len(arg) > 1:
-                    escs = arg[1:]
-                    esc.set(*escs)
-            elif (isinstance(arg, str)):
-                string = arg
-                esc.clear()
-            print(string, end="")
+            if "precall" in kwargs:
+                precall = kwargs["precall"]
+                del kwargs["precall"]
+            else:
+                precall = passme
+
+            if "postcall" in kwargs:
+                postcall = kwargs["postcall"]
+                del kwargs["postcall"]
+            else:
+                postcall = passme
+
+            prefix=""
+            if "prefix" in kwargs:
+                prefix=kwargs["prefix"]
+                del kwargs["prefix"]
+
+            for s in ["bg","fg","default"]:
+                if s in kwargs:
+                    del kwargs[s]
+
+            precall()
+            print(prefix, end="")
+            print(string, **kwargs)
+            postcall()
             esc.clear()
-        print()
+        except Exception as error:
+            esc.clear()
+            print(error)
+            
+    @staticmethod
+    def printf(*args, **kwargs) -> None:
+        try: 
+            if "end" not in kwargs:
+                kwargs["end"] = ""
+            for arg in args:
+                if isinstance(arg,(tuple,list)):
+                    string = arg[0]
+                    if len(arg) > 1:
+                        escs = arg[1:]
+                        esc.set(*escs, **kwargs)
+                        for s in ["bg","fg","default"]:
+                            if s in kwargs:
+                                del kwargs[s]
+                elif (isinstance(arg, str)):
+                    string = arg
+                    esc.clear()
+                esc.print(string, **kwargs)
+                esc.clear()
+            print()
+        except Exception as error:
+            esc.clear()
+            print(error)
     
     @staticmethod
     def create_fn(*args, **kwargs) -> Callable:
@@ -209,7 +260,7 @@ class esc:
         return print_fn
     
     @staticmethod
-    def input(string:str, *args, **kwargs) -> str:
+    def input(prompt_str:str, *args, **kwargs) -> str:
         escinput = ""
         if "input" in kwargs:
             escinput = kwargs["input"]
@@ -219,7 +270,7 @@ class esc:
             escprompt = kwargs["prompt"]
             del kwargs["prompt"]
         esc.set(escprompt)
-        esc.print(string, *args, **kwargs)
+        esc.print(prompt_str, *args, **kwargs)
         esc.set(escinput)
         input_value = input()
         esc.clear()
@@ -284,11 +335,19 @@ class esc:
 
     @staticmethod
     def enable_alt_buffer() -> None:
-        print(esc.altbuffer, end="")
+        print(esc.altbuffer)
     
     @staticmethod
     def disable_alt_buffer() -> None:
-        print(esc.disablealtbuffer, end="")
+        print(esc.disablealtbuffer)
+
+    @staticmethod
+    def save_cursor() -> None:
+        print(esc.savecursor, end="")
+
+    @staticmethod
+    def save_cursor() -> None:
+        print(esc.restorecursor, end="")
 
     @staticmethod
     def save_screen() -> None:
@@ -313,8 +372,17 @@ class esc:
     @staticmethod
     def bg_rgb(r:int,g:int,b:int) -> None:
         print(f"\x1b[48;2;{r};{g};{b}m", end="")
-    
-    
-    
 
+    @staticmethod
+    def terminal_size() -> tuple:
+        sz = os.get_terminal_size()
+        TerminalSize = namedtuple("TerminalSize", ("x","y"))
+        return TerminalSize(sz.columns, sz.lines)
+
+    @staticmethod
+    def cursor_to_top() -> None:
+        height = esc.terminal_size().y
+        esc.cursor_up(height)
     
+    def cursor_home() -> None:
+        print(esc.home, end="")

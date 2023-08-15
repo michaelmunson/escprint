@@ -1,4 +1,4 @@
 
 General:
-    [ ] allow numbers as arguments, for setting specific colors, eg. fg243, and bg231
-        
+    [√] allow numbers as arguments, for setting specific colors, eg. fg243, and bg231
+    [ ] figure out how to make default keyword lowest priority
