@@ -91,7 +91,7 @@ print_yellow_italic = esc.create_fn("yellow","italic")
 
 print_yellow_italic("This will be yellow and italic", end="")
 ```
-Note that the <a>href="#kwargs">keyword arguments</a> allowed for 
+Note that the <a href="#kwargs">keyword arguments</a> allowed for 
 **esc.print** are valid when creating the function.
 ```python
 print_yellow_italic = esc.create_fn("yellow","italic",precall=print("'Ello Govna"))
