@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: escprint
-Version: 1.0.1
+Version: 1.0.3
 Summary: Library for formatting and styling terminal outputs via ANSI escape sequences.
 Home-page: https://github.com/michaelmunson/escprint
 Author: Michael Munson
