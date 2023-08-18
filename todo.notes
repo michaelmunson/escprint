@@ -1,0 +1,7 @@
+[ ] fix default to apply to all
+[ ] add functions for deleting until end of line, etc...
+[ ] fix bugs in del2endln and stuff
+
+build
+$ python3 -m build
+$ twine upload dist/*

@@ -64,11 +64,11 @@ ESCMAP = {
     # erase saved lines
     "delsaved" : "\x1b[3J",
     # erase from cursor to end of line
-    "del2endln" : "\x1b[KJ",
+    "del2endln" : "\x1b[K0",
     # erase start of line to the cursor
-    "del2startln" : "\x1b[0K",
+    "del2startln" : "\x1b[1K",
     # erase the entire line
-    "delln" : "\x1b[1K",
+    "delln" : "\x1b[2K",
     "nocursor" : "\x1b[?25l",
     "showcursor" : "\x1b[?25h",
     "altbuffer" : "\x1b[?1049h",
@@ -137,11 +137,11 @@ class esc:
     # erase saved lines
     delsaved = "\x1b[3J"
     # erase from cursor to end of line
-    del2endln = "\x1b[KJ"
+    del2endln = "\x1b[0K"
     # erase start of line to the cursor
-    del2startln = "\x1b[0K"
+    del2startln = "\x1b[1K"
     # erase the entire line
-    delln = "\x1b[1K"
+    delln = "\x1b[2K"
     nocursor = "\x1b[?25l"
     showcursor = "\x1b[?25h"
     altbuffer = "\x1b[?1049h"
